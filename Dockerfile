@@ -1,19 +1,26 @@
-### WARNING ###
-# The Java connector Dockerfiles will soon be deprecated.
-# This Dockerfile is not used to build the connector image we publish to DockerHub.
-# The new logic to build the connector image is declared with Dagger here:
-# https://github.com/airbytehq/airbyte/blob/master/tools/ci_connector_ops/ci_connector_ops/pipelines/actions/environments.py#L649
+# Use an official Docker image with bash support
+FROM ubuntu:20.04
 
-# If you need to add a custom logic to build your connector image, you can do it by adding a finalize_build.sh or finalize_build.py script in the connector folder.
-# Please reach out to the Connectors Operations team if you have any question.
-FROM amazonlinux:2022.0.20220831.1
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    docker.io \
+    docker-compose \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /airbyte
+# Set working directory
+WORKDIR /usr/src/app
 
-COPY base.sh .
+# Copy the Airbyte run script (your script)
+COPY run-ab-platform.sh .
 
-ENV AIRBYTE_ENTRYPOINT "/airbyte/base.sh"
-ENTRYPOINT ["/airbyte/base.sh"]
+# Make the script executable
+RUN chmod +x run-ab-platform.sh
 
-LABEL io.airbyte.version=0.1.0
-LABEL io.airbyte.name=airbyte/integration-base
+# Expose necessary ports for Airbyte (Web UI, APIs)
+EXPOSE 8000 8001
+
+# Set default command to run your Airbyte script
+CMD ["./run-ab-platform.sh"]
+
